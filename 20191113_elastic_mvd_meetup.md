@@ -1,0 +1,206 @@
+title: Si no puedes medirlo, no existe
+class: animation-fade, center, middle
+layout: true
+---
+class: impact
+# {{title}}
+## [@andresantoniuk](https://twitter.com/andresantoniuk)
+### Montevideo Elastic Meetup, Nov 2019
+---
+Hablo únicamente a título personal.
+---
+# Mi (pre) historia
+---
+![Chile](images/accessnova.png)
+---
+###### Medición/Corte remoto energía eléctrica - ZigBee/GPRS
+.col-6[![ipcom](images/ipcom_ampla.jpg)]
+.col-6[![ipcom](images/ipcom_ampla2.jpg)]
+---
+![Edantech](images/edantech_web.png)
+---
+![orbcom](images/orbcom.jpg)
+---
+###### https://www.tu-auto.com/edantech-s-library-and-testing-tools-for-acp245-now-available/
+![telematics](images/telematics.png)
+---
+![planta1](images/planta_andres.jpg)
+---
+![planta1](images/planta_estacion.jpg)
+---
+![planta1](images/planta_monitor.jpg)
+---
+# "from scratch"
+---
+![Dogma-vs-Truth](images/dogma-if-you-cant-measure-it-you-cant-manage-it.jpg)
+[https://www.forbes.com/sites/lizryan/2014/02/10/if-you-cant-measure-it-you-cant-manage-it-is-bs/#34f9ad787b8b](https://www.forbes.com/sites/lizryan/2014/02/10/if-you-cant-measure-it-you-cant-manage-it-is-bs)
+---
+# Nuevo desafío: transacciones
+---
+![Super Problemas](images/super-problemas.jpg)
+---
+![SystemDown-Hija](images/papa-noel.jpg)
+---
+###### https://twitter.com/andresantoniuk/status/945082321186770944
+![in God](images/in_god_we_trust.png)
+---
+# y ahora?
+---
+![graylog](images/graylog.png)
+---
+![diagram1](images/diagram1.png)
+![suitcase](images/suitcase.png)
+https://pypi.org/project/suitcase/
+---
+.small[
+```python
+# gl2slack.py
+# 2016 - Juan Andres Antoniuk
+# Receive alerts from Graylog and forward to Slack
+
+import web
+import urllib3
+from pyslack import SlackClient
+import json
+
+urllib3.disable_warnings()
+urls = ('/.*', 'Index')
+app = web.application(urls, globals())
+client = SlackClient('xxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxx')
+
+class Index:
+    def POST(self):
+        global client
+        urllib3.disable_warnings()
+        data = web.data()
+        parsed_json = json.loads(data)
+        msg = parsed_json['check_result']['result_description'] +" id="+ parsed_json['check_result']['triggered_condition']['id']
+        client.chat_post_message('#name', msg, username='xxxx')
+        return 'OK'
+
+if __name__ == "__main__":
+    app.run()
+```
+]
+---
+# Alertas Slack
+![diagram2](images/diagram2.png)
+---
+###### https://twitter.com/andresantoniuk/status/944605974446379008
+![Hope 2018](images/hope_2018.png)
+---
+###### https://twitter.com/apr/status/1061244120642002946
+![apr](images/apr_elk.png)
+---
+###### https://twitter.com/andresantoniuk/status/944582121586167809
+![without](images/without_data.png)
+---
+# jPOS & Elastic
+---
+###### https://github.com/jpos/jPOS/pull/178
+![github](images/github_pr178.png)
+---
+.small[
+```json
+input {
+  kafka {
+    bootstrap_servers => "localhost:9092"
+    topics => ["jpos"]
+  }
+}
+filter {
+  json {
+    source => "message"
+  }
+  mutate {
+    remove_field => [ "message" ]
+  }
+}
+output {
+  elasticsearch{
+    hosts => ["localhost:9200"]
+    index => "jposlog-%{+YYYY.MM.dd.hh}"
+  }
+}
+```
+]
+---
+![jpos](images/jpos_linkedin.png)
+.small[https://www.linkedin.com/pulse/my-journey-jpos-elastic-juan-andr%C3%A9s-antoniuk-buchtik/]
+---
+# Elastic everyware
+---
+###### https://twitter.com/CodeWisdom/status/1188811911095304192
+![mastered](images/mastered_tool.png)
+---
+![beats](images/beats.png)
+---
+![whatcher](images/whatcher.png)
+---
+
+```
+{
+  "trigger": {"schedule": {"cron": "0 0/5 9-2 * * ?"}},
+  "input": {
+    "search": {
+      "request": {
+        "search_type": "query_then_fetch",
+        "indices": ["xxxx*"],
+        "types": ["doc"],
+        "body": {
+          "size": 1,
+          "query": {"bool": {"must": [
+                {"range": {"@timestamp": {"gte": "now-5m"}}},
+                {"match": {"result": "00"}},
+  "condition": {"compare": {"ctx.payload.hits.total": {"eq": 0}}},
+  "actions": {
+    "slack_1": {"slack": {"message": {
+          "from": "Sin_Transacciones_Aprobadas_Watcher",
+          "to": ["#channel"],
+          "text": "Sin transacciones aprobadas en los ultimos 5 minutos."}}}}}}}}}}}
+```
+
+---
+# Data enrichment
+## Logstash: Translate filter plugin
+.left[A general search and replace tool that uses a configured hash and/or a file to determine replacement values. Currently supported are YAML, JSON, and CSV files. Each dictionary item is a key value pair.]
+
+.small[https://www.elastic.co/guide/en/logstash/current/plugins-filters-translate.html#_description_147]
+---
+# Synchronized with a relational database
+## Logstash: Jdbc input plugin
+.left[This plugin was created as a way to ingest data in any database with a JDBC interface into Logstash. You can periodically schedule ingestion using a cron syntax (see schedule setting) or run the query one time to load data into Logstash. Each row in the resultset becomes a single event. Columns in the resultset are converted into fields in the event.]
+---
+# Seguridad
+## Field level security
+.left[Field level security restricts the fields that users have read access to. In particular, it restricts which fields can be accessed from document-based read APIs.]
+
+.left[To enable field level security, specify the fields that each role can access as part of the indices permissions in a role definition. Field level security is thus bound to a well-defined set of indices (and potentially a set of documents).]
+---
+
+.small[
+```json
+{
+  "role_X" : {
+    "cluster" : [ ],
+    "indices" : [{"names" : ["index*"],
+        "privileges" : ["read","view_index_metadata"],
+        "field_security" : {"grant" : ["*"],"except" : ["fieldX.*"]},
+        "query" :
+"""{"template":{"source":
+   {"terms":{"fieldY":
+    ["{{#_user.metadata.fieldY}}",
+      "{{.}}",
+    "{{/_user.metadata.fieldY}}"]}}}}""",
+
+        "allow_restricted_indices" : false
+      },
+      {"names" : [".kibana*"],
+        "privileges" : ["read","view_index_metadata"],
+        "allow_restricted_indices" : false}]}}
+```
+]
+
+---
+# si hubiera tenido Elastic...
+---
