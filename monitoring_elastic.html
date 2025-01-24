@@ -6,11 +6,14 @@
   <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 </head>
 <body>
-  <textarea id="source" style="display:none;">
-  <?php include '20191113_elastic_mvd_meetup.md'; ?>
-  </textarea>
+  <textarea id="source" style="display:none;"></textarea>
   <script>
-    var slideshow = remark.create();
+    fetch('20191113_elastic_mvd_meetup.md')
+      .then(response => response.text())
+      .then(text => {
+        document.getElementById('source').value = text;
+        remark.create();
+      });
   </script>
 </body>
 </html>
